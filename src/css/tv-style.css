@@ -14,6 +14,89 @@ body {
   height: 100vh;
 }
 
+/* Loading Screen Styles */
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s ease;
+}
+
+.loading-screen.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.loading-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 40px;
+}
+
+.loading-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 30px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-content h2 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  font-weight: 300;
+}
+
+.loading-content p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  opacity: 0.8;
+}
+
+.loading-progress {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  border-radius: 4px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+#progress-text {
+  font-size: 1rem;
+  font-weight: 500;
+  min-width: 40px;
+}
+
 .tv-container {
   display: flex;
   flex-direction: column;
@@ -133,6 +216,252 @@ body {
   opacity: 0.9;
 }
 
+/* Enhanced Device List Styles - Inspired by LeTV */
+.device-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    margin-top: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.device-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    background: white;
+    margin: 4px 8px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.device-item:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.device-item:last-child {
+    border-bottom: none;
+}
+
+.device-item.connected {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
+    border-left: 4px solid #4caf50;
+}
+
+.device-item.connecting {
+    background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%);
+    border-left: 4px solid #ff9800;
+}
+
+.device-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    color: white;
+    font-size: 20px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.device-icon.tv {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.device-icon.phone {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.device-icon.computer {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.device-icon.speaker {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.device-details {
+    flex: 1;
+}
+
+.device-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 6px;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.device-type {
+    font-size: 13px;
+    color: #7f8c8d;
+    margin-bottom: 4px;
+    text-transform: capitalize;
+}
+
+.device-ip {
+    font-size: 12px;
+    color: #95a5a6;
+    font-family: 'Courier New', monospace;
+}
+
+.device-capabilities {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.capability-tag {
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    background: #ecf0f1;
+    color: #34495e;
+}
+
+.capability-tag.dlna {
+    background: #e8f5e8;
+    color: #27ae60;
+}
+
+.capability-tag.upnp {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.capability-tag.chromecast {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.device-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.status-indicator.online {
+    background: #4caf50;
+    animation: pulse-green 2s infinite;
+}
+
+.status-indicator.offline {
+    background: #f44336;
+}
+
+.status-indicator.connecting {
+    background: #ff9800;
+    animation: pulse-orange 1s infinite;
+}
+
+.status-text {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-text.online {
+    background: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+}
+
+.status-text.offline {
+    background: rgba(244, 67, 54, 0.1);
+    color: #c62828;
+}
+
+.status-text.connecting {
+    background: rgba(255, 152, 0, 0.1);
+    color: #ef6c00;
+}
+
+.device-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 12px;
+}
+
+.device-action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.device-action-btn.connect {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.device-action-btn.connect:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.device-action-btn.test {
+    background: #ecf0f1;
+    color: #34495e;
+}
+
+.device-action-btn.test:hover {
+    background: #bdc3c7;
+}
+
+@keyframes pulse-green {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+}
+
+@keyframes pulse-orange {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(255, 152, 0, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
+    }
+}
+
 .device-info {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 15px;
@@ -147,6 +476,41 @@ body {
 
 .device-info strong {
   color: #ffdd44;
+}
+
+/* QR Code Section */
+.qr-code-section {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.qr-code-section h3 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #ffdd44;
+}
+
+.qr-code-placeholder {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.qr-loading {
+  color: #333;
+  font-size: 1.1rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* Video Player Screen */

@@ -6,6 +6,9 @@ class TVReceiver {
         this.isConnected = false;
         this.mediaPlayer = null;
         this.dlnaService = null;
+        this.networkDiscovery = null;
+        this.remoteNavigation = null;
+        this.loadingProgress = 0;
         this.deviceInfo = {
             name: 'DLNA Cast TV Receiver',
             model: 'TV-001',
@@ -19,22 +22,154 @@ class TVReceiver {
     async init() {
         console.log('TV Receiver initializing...');
         
-        // Initialize UI elements
-        this.initializeElements();
+        try {
+            // Show loading screen
+            this.showLoadingScreen();
+            
+            // Initialize with progress tracking
+            await this.updateProgress(10, '初始化界面...');
+            this.initializeElements();
+            
+            await this.updateProgress(25, '设置事件监听器...');
+            this.setupEventListeners();
+            
+            await this.updateProgress(40, '获取设备信息...');
+            await this.getDeviceIP();
+            
+            await this.updateProgress(60, '启动DLNA服务...');
+            await this.initializeDLNA();
+            
+            await this.updateProgress(80, '初始化远程控制...');
+            this.setupRemoteNavigation();
+            
+            await this.updateProgress(95, '生成连接二维码...');
+            await this.generateQRCode();
+            
+            await this.updateProgress(100, '启动完成!');
+            
+            // Hide loading screen and show main interface
+            setTimeout(() => {
+                this.hideLoadingScreen();
+            }, 500);
+            
+            this.log('TV接收器启动完成');
+        } catch (error) {
+            console.error('Failed to initialize TV Receiver:', error);
+            this.showError('启动失败: ' + error.message);
+        }
+    }
+
+    showLoadingScreen() {
+        const loadingScreen = document.getElementById('loading-screen');
+        const tvContainer = document.querySelector('.tv-container');
         
-        // Setup event listeners
-        this.setupEventListeners();
+        if (loadingScreen) {
+            loadingScreen.classList.add('active');
+        }
+        if (tvContainer) {
+            tvContainer.style.display = 'none';
+        }
+    }
+
+    hideLoadingScreen() {
+        const loadingScreen = document.getElementById('loading-screen');
+        const tvContainer = document.querySelector('.tv-container');
         
-        // Get device IP
-        await this.getDeviceIP();
+        if (loadingScreen) {
+            loadingScreen.classList.remove('active');
+        }
+        if (tvContainer) {
+            tvContainer.style.display = 'flex';
+        }
+    }
+
+    async updateProgress(percentage, status) {
+        return new Promise(resolve => {
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const loadingStatus = document.getElementById('loading-status');
+            
+            if (progressFill) {
+                progressFill.style.width = percentage + '%';
+            }
+            if (progressText) {
+                progressText.textContent = percentage + '%';
+            }
+            if (loadingStatus) {
+                loadingStatus.textContent = status;
+            }
+            
+            // Simulate some loading time
+            setTimeout(resolve, 200 + Math.random() * 300);
+        });
+    }
+
+    showError(message) {
+        const loadingStatus = document.getElementById('loading-status');
+        const loadingScreen = document.getElementById('loading-screen');
         
-        // Initialize DLNA service
-        await this.initializeDLNA();
+        if (loadingStatus) {
+            loadingStatus.textContent = message;
+            loadingStatus.style.color = '#ff6b6b';
+        }
         
-        // Setup remote control navigation
-        this.setupRemoteNavigation();
-        
-        this.log('TV接收器启动完成');
+        // Add retry button
+        if (loadingScreen) {
+            const retryButton = document.createElement('button');
+            retryButton.textContent = '重试';
+            retryButton.style.cssText = `
+                margin-top: 20px;
+                padding: 10px 20px;
+                background: #4facfe;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                font-size: 1rem;
+                cursor: pointer;
+            `;
+            retryButton.onclick = () => {
+                location.reload();
+            };
+            
+            const loadingContent = loadingScreen.querySelector('.loading-content');
+            if (loadingContent && !loadingContent.querySelector('button')) {
+                loadingContent.appendChild(retryButton);
+            }
+        }
+    }
+
+    async generateQRCode() {
+        try {
+            const deviceIP = document.getElementById('device-ip').textContent;
+            const qrContainer = document.getElementById('qr-code');
+            
+            if (qrContainer && deviceIP && deviceIP !== '获取中...') {
+                // Create connection URL
+                const connectionUrl = `http://${deviceIP}:8080`;
+                
+                // Simple QR code placeholder (in real implementation, use QR code library)
+                qrContainer.innerHTML = `
+                    <div style="
+                        width: 180px;
+                        height: 180px;
+                        background: #333;
+                        color: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.9rem;
+                        text-align: center;
+                        padding: 10px;
+                        line-height: 1.2;
+                    ">
+                        连接地址:<br>
+                        ${connectionUrl}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Failed to generate QR code:', error);
+        }
     }
 
     initializeElements() {
@@ -365,6 +500,167 @@ class TVReceiver {
                 document.body.removeChild(notification);
             }, 300);
         }, 3000);
+    }
+
+    updateDeviceList() {
+        const deviceList = document.getElementById('deviceList');
+        if (!deviceList) return;
+        
+        const peers = this.networkDiscovery.getPeers();
+        
+        if (peers.length === 0) {
+            deviceList.innerHTML = `
+                <div class="no-devices" style="
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: #7f8c8d;
+                    font-size: 16px;
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                    border-radius: 12px;
+                    margin: 10px;
+                ">
+                    <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">📱</div>
+                    <div style="font-weight: 600; margin-bottom: 8px;">未发现设备</div>
+                    <div style="font-size: 14px; opacity: 0.8;">请确保设备在同一网络下并点击扫描</div>
+                </div>
+            `;
+            return;
+        }
+        
+        deviceList.innerHTML = peers.map(peer => {
+            const isOnline = peer.lastSeen > Date.now() - 30000;
+            const isConnected = this.connectedPeers.has(peer.UDN);
+            const isConnecting = this.connectingPeers.has(peer.UDN);
+            
+            let statusClass = 'offline';
+            let statusText = 'Offline';
+            let deviceClass = '';
+            
+            if (isConnected) {
+                statusClass = 'online';
+                statusText = 'Connected';
+                deviceClass = 'connected';
+            } else if (isConnecting) {
+                statusClass = 'connecting';
+                statusText = 'Connecting';
+                deviceClass = 'connecting';
+            } else if (isOnline) {
+                statusClass = 'online';
+                statusText = 'Online';
+            }
+            
+            const deviceIcon = this.getDeviceIcon(peer);
+            const capabilities = this.getDeviceCapabilities(peer);
+            
+            return `
+                <div class="device-item ${deviceClass}" data-udn="${peer.UDN}">
+                    <div class="device-info">
+                        <div class="device-icon ${deviceIcon.type}">
+                            ${deviceIcon.icon}
+                        </div>
+                        <div class="device-details">
+                            <div class="device-name">${peer.friendlyName}</div>
+                            <div class="device-type">${this.getDeviceTypeDisplay(peer)}</div>
+                            <div class="device-ip">${peer.ip || 'Unknown IP'}</div>
+                            <div class="device-capabilities">
+                                ${capabilities.map(cap => `<span class="capability-tag ${cap.type}">${cap.name}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="device-status">
+                        <div class="status-indicator ${statusClass}"></div>
+                        <div class="status-text ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="device-actions">
+                        ${!isConnected && !isConnecting ? `
+                            <button class="device-action-btn connect" onclick="tvReceiver.connectToPeer('${peer.UDN}')">
+                                连接
+                            </button>
+                        ` : ''}
+                        <button class="device-action-btn test" onclick="tvReceiver.testDevice('${peer.UDN}')">
+                            测试
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    getDeviceIcon(peer) {
+        const deviceType = peer.deviceType || '';
+        const friendlyName = peer.friendlyName || '';
+        
+        if (deviceType.includes('MediaRenderer') || friendlyName.toLowerCase().includes('tv')) {
+            return { type: 'tv', icon: '📺' };
+        } else if (friendlyName.toLowerCase().includes('phone') || friendlyName.toLowerCase().includes('mobile')) {
+            return { type: 'phone', icon: '📱' };
+        } else if (friendlyName.toLowerCase().includes('computer') || friendlyName.toLowerCase().includes('pc')) {
+            return { type: 'computer', icon: '💻' };
+        } else if (deviceType.includes('MediaServer') || friendlyName.toLowerCase().includes('speaker')) {
+            return { type: 'speaker', icon: '🔊' };
+        } else {
+            return { type: 'tv', icon: '📱' };
+        }
+    }
+    
+    getDeviceTypeDisplay(peer) {
+        const deviceType = peer.deviceType || '';
+        
+        if (deviceType.includes('MediaRenderer')) {
+            return 'Media Renderer';
+        } else if (deviceType.includes('MediaServer')) {
+            return 'Media Server';
+        } else if (peer.type === 'mdns-device') {
+            return 'mDNS Device';
+        } else if (peer.type === 'network-device') {
+            return 'Network Device';
+        } else {
+            return 'DLNA Device';
+        }
+    }
+    
+    getDeviceCapabilities(peer) {
+        const capabilities = [];
+        
+        if (peer.compatibility) {
+            if (peer.compatibility.dlna) {
+                capabilities.push({ type: 'dlna', name: 'DLNA' });
+            }
+            if (peer.compatibility.upnp) {
+                capabilities.push({ type: 'upnp', name: 'UPnP' });
+            }
+            if (peer.compatibility.chromecast) {
+                capabilities.push({ type: 'chromecast', name: 'Cast' });
+            }
+        } else {
+            // Default capabilities based on device type
+            if (peer.deviceType && peer.deviceType.includes('MediaRenderer')) {
+                capabilities.push({ type: 'dlna', name: 'DLNA' });
+            }
+            if (peer.type === 'upnp-device') {
+                capabilities.push({ type: 'upnp', name: 'UPnP' });
+            }
+        }
+        
+        return capabilities;
+    }
+    
+    async testDevice(udn) {
+        const peer = this.networkDiscovery.getPeer(udn);
+        if (!peer) return;
+        
+        this.log(`测试设备兼容性: ${peer.friendlyName}`);
+        
+        try {
+            const compatibility = await this.networkDiscovery.testDeviceCompatibility(peer);
+            this.log(`设备兼容性测试完成: ${JSON.stringify(compatibility)}`);
+            
+            // Update device list to show new compatibility info
+            this.updateDeviceList();
+            
+        } catch (error) {
+            this.log(`设备测试失败: ${error.message}`);
+        }
     }
 
     // Public API for external control

@@ -24,8 +24,23 @@
 </head>
 <body>
   <div id="app">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen active">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <h2>正在启动投屏接收器...</h2>
+        <p id="loading-status">初始化系统...</p>
+        <div class="loading-progress">
+          <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <span id="progress-text">0%</span>
+        </div>
+      </div>
+    </div>
+
     <!-- TV Receiver Main Interface -->
-    <div class="tv-container">
+    <div class="tv-container" style="display: none;">
       <header class="tv-header">
         <h1>📺 DLNA投屏接收器</h1>
         <div class="status-indicator">
@@ -44,6 +59,12 @@
             <div class="device-info">
               <p><strong>设备名称:</strong> <span id="device-name">DLNA Cast TV</span></p>
               <p><strong>IP地址:</strong> <span id="device-ip">获取中...</span></p>
+            </div>
+            <div class="qr-code-section">
+              <h3>扫码快速连接</h3>
+              <div id="qr-code" class="qr-code-placeholder">
+                <div class="qr-loading">生成中...</div>
+              </div>
             </div>
           </div>
         </div>

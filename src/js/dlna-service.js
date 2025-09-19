@@ -42,11 +42,21 @@ class DLNAService {
         try {
             this.tvReceiver.log('启动DLNA服务...');
             
-            // Start network discovery service
-            await this.startNetworkDiscovery();
+            // Start network discovery service with timeout
+            const discoveryPromise = this.startNetworkDiscovery();
+            const discoveryTimeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('网络发现服务启动超时')), 5000);
+            });
             
-            // Start HTTP server for device description and control
-            await this.startHTTPServer();
+            await Promise.race([discoveryPromise, discoveryTimeoutPromise]);
+            
+            // Start HTTP server for device description and control with timeout
+            const serverPromise = this.startHTTPServer();
+            const serverTimeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('HTTP服务器启动超时')), 3000);
+            });
+            
+            await Promise.race([serverPromise, serverTimeoutPromise]);
             
             // Start SSDP server for device discovery
             await this.startSSDPServer();
@@ -56,7 +66,9 @@ class DLNAService {
             
         } catch (error) {
             this.tvReceiver.log('DLNA服务启动失败: ' + error.message);
-            throw error;
+            // Don't throw error, just log it and continue
+            this.tvReceiver.log('DLNA服务启动失败，继续使用有限功能');
+            this.isRunning = false;
         }
     }
 
@@ -181,55 +193,247 @@ class DLNAService {
     }
 
     handleSetAVTransportURI(data) {
-        const { CurrentURI, CurrentURIMetaData } = data.args;
-        
-        // Parse metadata to get media info
-        let mediaInfo = {
-            title: '未知媒体',
-            type: 'video'
-        };
-        
-        if (CurrentURIMetaData) {
-            try {
-                // Parse DIDL-Lite metadata
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(CurrentURIMetaData, 'text/xml');
-                const item = xmlDoc.querySelector('item');
-                
-                if (item) {
-                    const title = item.querySelector('title');
-                    const res = item.querySelector('res');
+        try {
+            const { CurrentURI, CurrentURIMetaData } = data.args;
+            
+            // Enhanced metadata parsing with more fields
+            let mediaInfo = {
+                title: '未知媒体',
+                type: 'video',
+                artist: '',
+                album: '',
+                genre: '',
+                duration: '00:00:00',
+                resolution: '',
+                bitrate: '',
+                codec: '',
+                subtitles: [],
+                size: 0
+            };
+            
+            if (CurrentURIMetaData) {
+                try {
+                    // Parse DIDL-Lite metadata with enhanced support
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(CurrentURIMetaData, 'text/xml');
+                    const item = xmlDoc.querySelector('item');
                     
-                    if (title) {
-                        mediaInfo.title = title.textContent;
-                    }
-                    
-                    if (res) {
-                        const protocolInfo = res.getAttribute('protocolInfo');
-                        if (protocolInfo) {
-                            if (protocolInfo.includes('video')) {
-                                mediaInfo.type = 'video';
-                            } else if (protocolInfo.includes('audio')) {
-                                mediaInfo.type = 'audio';
-                            } else if (protocolInfo.includes('image')) {
-                                mediaInfo.type = 'image';
+                    if (item) {
+                        const title = item.querySelector('title, dc\\:title');
+                        const artist = item.querySelector('artist, upnp\\:artist, dc\\:creator');
+                        const album = item.querySelector('album, upnp\\:album');
+                        const genre = item.querySelector('genre, upnp\\:genre');
+                        const res = item.querySelector('res');
+                        
+                        if (title) mediaInfo.title = title.textContent;
+                        if (artist) mediaInfo.artist = artist.textContent;
+                        if (album) mediaInfo.album = album.textContent;
+                        if (genre) mediaInfo.genre = genre.textContent;
+                        
+                        if (res) {
+                            const protocolInfo = res.getAttribute('protocolInfo');
+                            const duration = res.getAttribute('duration');
+                            const resolution = res.getAttribute('resolution');
+                            const bitrate = res.getAttribute('bitrate');
+                            const size = res.getAttribute('size');
+                            
+                            if (duration) mediaInfo.duration = duration;
+                            if (resolution) mediaInfo.resolution = resolution;
+                            if (bitrate) mediaInfo.bitrate = bitrate;
+                            if (size) mediaInfo.size = parseInt(size) || 0;
+                            
+                            if (protocolInfo) {
+                                // Enhanced media type detection
+                                if (protocolInfo.includes('video')) {
+                                    mediaInfo.type = 'video';
+                                    mediaInfo.codec = this.extractVideoCodec(protocolInfo);
+                                } else if (protocolInfo.includes('audio')) {
+                                    mediaInfo.type = 'audio';
+                                    mediaInfo.codec = this.extractAudioCodec(protocolInfo);
+                                } else if (protocolInfo.includes('image')) {
+                                    mediaInfo.type = 'image';
+                                }
                             }
                         }
                     }
+                } catch (error) {
+                    this.tvReceiver.log('元数据解析错误: ' + error.message);
                 }
-            } catch (error) {
-                this.tvReceiver.log('元数据解析错误: ' + error.message);
+            }
+            
+            // Enhanced media type detection from URI
+            if (!mediaInfo.codec) {
+                const fileExtension = CurrentURI.split('.').pop().toLowerCase();
+                const videoFormats = ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'ts', 'mts', 'mpg', 'mpeg', 'vob', 'asf', 'rm', 'rmvb'];
+                const audioFormats = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'opus', 'ac3', 'dts', 'ape', 'amr'];
+                const imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'tiff', 'ico'];
+                
+                if (videoFormats.includes(fileExtension)) {
+                    mediaInfo.type = 'video';
+                    mediaInfo.codec = this.getVideoCodec(fileExtension);
+                } else if (audioFormats.includes(fileExtension)) {
+                    mediaInfo.type = 'audio';
+                    mediaInfo.codec = this.getAudioCodec(fileExtension);
+                } else if (imageFormats.includes(fileExtension)) {
+                    mediaInfo.type = 'image';
+                }
+            }
+            
+            // Validate URI accessibility with retry mechanism
+            this.validateMediaURI(CurrentURI).then(isValid => {
+                if (isValid) {
+                    // Set the media URI
+                    this.currentURI = CurrentURI;
+                    this.currentMetadata = mediaInfo;
+                    
+                    this.tvReceiver.log(`设置媒体URI: ${mediaInfo.title} (${mediaInfo.type}/${mediaInfo.codec})`);
+                    
+                    // Send response with enhanced info
+                    this.sendResponse(data.id, 'SetAVTransportURI', {
+                        success: true,
+                        mediaInfo: mediaInfo
+                    });
+                } else {
+                    throw new Error('媒体文件无法访问或格式不支持');
+                }
+            }).catch(error => {
+                this.tvReceiver.log('媒体URI验证失败: ' + error.message);
+                this.sendError(data.id, 'SetAVTransportURI', error.message);
+            });
+            
+        } catch (error) {
+            this.tvReceiver.log('设置媒体URI失败: ' + error.message);
+            this.sendError(data.id, 'SetAVTransportURI', error.message);
+        }
+    }
+    
+    extractVideoCodec(protocolInfo) {
+        const codecMap = {
+            'h264': 'H.264/AVC',
+            'h265': 'H.265/HEVC',
+            'hevc': 'H.265/HEVC',
+            'xvid': 'XVID',
+            'divx': 'DivX',
+            'vp8': 'VP8',
+            'vp9': 'VP9',
+            'av1': 'AV1',
+            'mpeg2': 'MPEG-2',
+            'mpeg4': 'MPEG-4',
+            'wmv': 'WMV'
+        };
+        
+        for (const [key, value] of Object.entries(codecMap)) {
+            if (protocolInfo.toLowerCase().includes(key)) {
+                return value;
             }
         }
+        return 'Unknown Video';
+    }
+    
+    extractAudioCodec(protocolInfo) {
+        const codecMap = {
+            'mp3': 'MP3',
+            'aac': 'AAC',
+            'flac': 'FLAC',
+            'pcm': 'PCM',
+            'vorbis': 'Vorbis',
+            'opus': 'Opus',
+            'wma': 'WMA',
+            'ac3': 'AC-3',
+            'dts': 'DTS',
+            'ape': 'APE'
+        };
         
-        // Set the media URI
-        this.currentURI = CurrentURI;
-        this.currentMetadata = mediaInfo;
-        
-        this.tvReceiver.log(`设置媒体URI: ${mediaInfo.title}`);
-        
-        // Send response
-        this.sendResponse(data.id, 'SetAVTransportURI', {});
+        for (const [key, value] of Object.entries(codecMap)) {
+            if (protocolInfo.toLowerCase().includes(key)) {
+                return value;
+            }
+        }
+        return 'Unknown Audio';
+    }
+    
+    getVideoCodec(extension) {
+        const codecMap = {
+            'mp4': 'H.264/AVC',
+            'mkv': 'H.264/H.265',
+            'avi': 'XVID/DivX',
+            'mov': 'H.264/HEVC',
+            'wmv': 'WMV/VC-1',
+            'webm': 'VP8/VP9',
+            'flv': 'H.264/VP6',
+            'm4v': 'H.264/AVC',
+            '3gp': 'H.263/H.264',
+            'ts': 'H.264/MPEG-2',
+            'mts': 'H.264/AVCHD',
+            'mpg': 'MPEG-2',
+            'mpeg': 'MPEG-2',
+            'vob': 'MPEG-2',
+            'asf': 'WMV',
+            'rm': 'RealVideo',
+            'rmvb': 'RealVideo'
+        };
+        return codecMap[extension] || 'Unknown Video';
+    }
+    
+    getAudioCodec(extension) {
+        const codecMap = {
+            'mp3': 'MP3',
+            'aac': 'AAC',
+            'flac': 'FLAC',
+            'wav': 'PCM',
+            'ogg': 'Vorbis',
+            'm4a': 'AAC',
+            'wma': 'WMA',
+            'opus': 'Opus',
+            'ac3': 'AC-3',
+            'dts': 'DTS',
+            'ape': 'APE',
+            'amr': 'AMR'
+        };
+        return codecMap[extension] || 'Unknown Audio';
+    }
+    
+    async validateMediaURI(uri) {
+        try {
+            // For HTTP/HTTPS URLs, try a HEAD request with retry
+            if (uri.startsWith('http')) {
+                let retries = 3;
+                while (retries > 0) {
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 5000);
+                        
+                        const response = await fetch(uri, { 
+                            method: 'HEAD',
+                            signal: controller.signal
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        if (response.ok) {
+                            return true;
+                        }
+                        
+                        retries--;
+                        if (retries > 0) {
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    } catch (error) {
+                        retries--;
+                        if (retries === 0) {
+                            throw error;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+                return false;
+            }
+            // For local files or other protocols, assume valid
+            return true;
+        } catch (error) {
+            this.tvReceiver.log('URI验证失败: ' + error.message);
+            return false;
+        }
     }
 
     handlePlay(data) {
