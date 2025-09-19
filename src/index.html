@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>DLNA Cast TV Receiver</title>
+
+  <base href="/" />
+
+  <meta name="color-scheme" content="light dark" />
+  <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-tap-highlight" content="no" />
+
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+
+  <!-- add to homescreen for ios -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="DLNA Cast TV Receiver" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/tv-style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- TV Receiver Main Interface -->
+    <div class="tv-container">
+      <header class="tv-header">
+        <h1>📺 DLNA投屏接收器</h1>
+        <div class="status-indicator">
+          <span id="connection-status" class="status-dot offline"></span>
+          <span id="status-text">等待连接...</span>
+        </div>
+      </header>
+
+      <main class="tv-main">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+          <div class="welcome-content">
+            <div class="tv-icon">📱➡️📺</div>
+            <h2>准备接收投屏</h2>
+            <p>请在手机上打开投屏应用，搜索并连接到此设备</p>
+            <div class="device-info">
+              <p><strong>设备名称:</strong> <span id="device-name">DLNA Cast TV</span></p>
+              <p><strong>IP地址:</strong> <span id="device-ip">获取中...</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video Player Screen -->
+        <div id="player-screen" class="screen">
+          <video id="video-player" controls autoplay>
+            <source src="" type="video/mp4">
+            您的浏览器不支持视频播放。
+          </video>
+          <div class="player-controls">
+            <button id="play-pause-btn" class="control-btn">⏸️</button>
+            <button id="stop-btn" class="control-btn">⏹️</button>
+            <button id="fullscreen-btn" class="control-btn">🔲</button>
+            <div class="volume-control">
+              <span>🔊</span>
+              <input type="range" id="volume-slider" min="0" max="100" value="50">
+            </div>
+          </div>
+          <div class="media-info">
+            <h3 id="media-title">正在播放...</h3>
+            <p id="media-duration">00:00 / 00:00</p>
+          </div>
+        </div>
+
+        <!-- Image Viewer Screen -->
+        <div id="image-screen" class="screen">
+          <div class="image-container">
+            <img id="image-viewer" src="" alt="投屏图片">
+          </div>
+          <div class="image-controls">
+            <button id="image-close-btn" class="control-btn">❌</button>
+            <button id="image-fullscreen-btn" class="control-btn">🔲</button>
+          </div>
+        </div>
+      </main>
+
+      <footer class="tv-footer">
+        <div class="connection-log">
+          <h4>连接日志</h4>
+          <div id="log-container">
+            <p>系统启动完成</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script type="module" src="/js/network-discovery.js"></script>
+    <script type="module" src="/js/dlna-service.js"></script>
+    <script type="module" src="/js/tv-receiver.js"></script>
+</body>
+</html>

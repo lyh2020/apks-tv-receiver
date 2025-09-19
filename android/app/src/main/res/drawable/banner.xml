@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    
+    <!-- Background -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M0,0h320v180h-320z" />
+    
+    <!-- TV Icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,60h160v80h-160z" />
+    
+    <!-- Screen -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M90,70h140v60h-140z" />
+    
+    <!-- Cast Symbol -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M110,90a10,10 0 0,1 10,10h20v20h-20a30,30 0 0,1 -30,-30z" />
+    
+    <!-- Text -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M100,155h120v10h-120z" />
+</vector>

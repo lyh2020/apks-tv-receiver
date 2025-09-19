@@ -1,0 +1,15 @@
+{
+  "appId": "com.dlnacast.tvreceiver",
+  "appName": "DLNA Cast TV Receiver",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  }
+}
