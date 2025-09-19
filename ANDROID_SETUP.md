@@ -5,8 +5,8 @@
 要构建Android版本的TV投屏接收器，您需要安装以下工具：
 
 ### 1. Java Development Kit (JDK)
-- **要求版本**: JDK 11 或更高版本
-- **推荐**: Oracle JDK 11 或 OpenJDK 11
+- **要求版本**: JDK 17 或更高版本
+- **推荐**: Oracle JDK 17 或 OpenJDK 17
 - **下载地址**: https://adoptium.net/
 
 ### 2. Android Studio 和 Android SDK
@@ -39,11 +39,18 @@ export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
 ```
 
 ### 步骤 3: 配置项目
-1. 复制 `android/local.properties.example` 到 `android/local.properties`
-2. 编辑 `local.properties` 文件，设置正确的 SDK 路径：
+1. 编辑 `android/local.properties` 文件，设置正确的 SDK 路径：
    ```
    sdk.dir=C:\\Users\\YourUsername\\AppData\\Local\\Android\\Sdk
    ```
+
+2. 编辑 `android/gradle.properties` 文件，配置 Java 17 路径：
+   ```
+   # 取消注释并设置正确的 Java 17 路径
+   org.gradle.java.home=C:\\Program Files\\Java\\jdk-17
+   ```
+   
+   **注意**: 如果系统默认 Java 版本不是 17，必须配置此项。
 
 ### 步骤 4: 构建项目
 ```bash
@@ -57,11 +64,16 @@ cd android
 **解决方案**: 确保 `local.properties` 文件中的 `sdk.dir` 路径正确指向您的 Android SDK 安装目录。
 
 ### Q: Java 版本不兼容
-**解决方案**: 确保使用 JDK 11。可以通过以下命令检查：
+**解决方案**: 确保使用 JDK 17 或更高版本。可以通过以下命令检查：
 ```bash
 java -version
 javac -version
 ```
+
+如果版本不正确，请：
+1. 下载并安装 JDK 17
+2. 设置 JAVA_HOME 环境变量
+3. 更新 PATH 环境变量
 
 ### Q: Gradle 构建失败
 **解决方案**: 
