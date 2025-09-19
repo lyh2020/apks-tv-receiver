@@ -32,6 +32,9 @@
 
 ### 方法二：自行构建
 
+#### 环境配置
+请参考 [Android开发环境配置指南](./ANDROID_SETUP.md) 来设置开发环境。
+
 ```bash
 # 克隆仓库
 git clone <repository-url>

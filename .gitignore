@@ -42,6 +42,9 @@ logs/
 android/app/build/
 android/build/
 android/.gradle/
+android/gradle/
+android/gradlew
+android/gradlew.bat
 android/local.properties
 android/gradle.properties
 android/keystore.properties
