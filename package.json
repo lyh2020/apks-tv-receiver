@@ -13,13 +13,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/core": "latest",
-    "@capacitor/camera": "latest",
-    "@capacitor/splash-screen": "latest"
+    "@capacitor/core": "^5.7.8",
+    "@capacitor/camera": "^5.0.9",
+    "@capacitor/splash-screen": "^5.0.7"
   },
   "devDependencies": {
-    "@capacitor/cli": "latest",
-    "@capacitor/android": "latest",
+    "@capacitor/cli": "^5.7.8",
+    "@capacitor/android": "^5.7.8",
     "vite": "^5.4.2"
   },
   "author": "",

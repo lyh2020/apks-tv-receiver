@@ -5,8 +5,9 @@
 要构建Android版本的TV投屏接收器，您需要安装以下工具：
 
 ### 1. Java Development Kit (JDK)
-- **要求版本**: JDK 17 或更高版本
-- **推荐**: Oracle JDK 17 或 OpenJDK 17
+- **要求版本**: JDK 11 或更高版本
+- **推荐**: Oracle JDK 11 或 OpenJDK 11
+- **注意**: 当前项目配置为使用 Java 11 以确保与 Capacitor 5.x 的兼容性
 - **下载地址**: https://adoptium.net/
 
 ### 2. Android Studio 和 Android SDK
@@ -64,16 +65,18 @@ cd android
 **解决方案**: 确保 `local.properties` 文件中的 `sdk.dir` 路径正确指向您的 Android SDK 安装目录。
 
 ### Q: Java 版本不兼容
-**解决方案**: 确保使用 JDK 17 或更高版本。可以通过以下命令检查：
+**解决方案**: 确保使用 JDK 11 或更高版本。可以通过以下命令检查：
 ```bash
 java -version
 javac -version
 ```
 
 如果版本不正确，请：
-1. 下载并安装 JDK 17
+1. 下载并安装 JDK 11
 2. 设置 JAVA_HOME 环境变量
 3. 更新 PATH 环境变量
+
+**重要说明**：当前项目使用 Capacitor 5.x 和 Android Gradle Plugin 7.4.2，这些版本与 Java 11 兼容。如果需要使用更新的版本，可能需要升级到 Java 17。
 
 ### Q: Gradle 构建失败
 **解决方案**: 
