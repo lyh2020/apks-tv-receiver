@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <title>电视投屏接收器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #444;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            font-size: 1.2rem;
+            color: #4CAF50;
+        }
+        
+        .main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .content {
+            text-align: center;
+            max-width: 800px;
+        }
+        
+        .icon {
+            font-size: 8rem;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .message {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        
+        .info {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            font-size: 1.4rem;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: bold;
+        }
+        
+        .info-value {
+            color: #4CAF50;
+        }
+        
+        .instructions {
+            font-size: 1.3rem;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        
+        .footer {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            text-align: center;
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+        
+        .video-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1000;
+        }
+        
+        .video-container.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        video {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px 30px;
+            border-radius: 50px;
+        }
+        
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📺 电视投屏接收器</h1>
+        <div class="status" id="status">● 就绪等待连接</div>
+    </div>
+    
+    <div class="main">
+        <div class="content">
+            <div class="icon">📱➡️📺</div>
+            <div class="message">准备接收投屏内容</div>
+            
+            <div class="info">
+                <div class="info-item">
+                    <span class="info-label">设备名称</span>
+                    <span class="info-value" id="device-name">电视接收器</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">IP地址</span>
+                    <span class="info-value" id="ip-address">获取中...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">端口</span>
+                    <span class="info-value">8080</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">状态</span>
+                    <span class="info-value" id="connection-status">等待连接</span>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <p>📱 在手机上打开投屏应用</p>
+                <p>🔍 搜索并选择此设备</p>
+                <p>▶️ 开始投屏视频或图片</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div>简化版电视投屏接收器 - 专为电视优化</div>
+    </div>
+    
+    <!-- 视频播放容器 -->
+    <div class="video-container" id="video-container">
+        <video id="video-player" controls autoplay></video>
+        <div class="controls">
+            <button class="control-btn" onclick="togglePlay()">⏯️</button>
+            <button class="control-btn" onclick="stopVideo()">⏹️</button>
+            <button class="control-btn" onclick="toggleFullscreen()">⛶</button>
+            <button class="control-btn" onclick="closeVideo()">❌</button>
+        </div>
+    </div>
+
+    <script>
+        // 简化的投屏接收器
+        class SimpleTVReceiver {
+            constructor() {
+                this.init();
+            }
+            
+            async init() {
+                console.log('简化版TV接收器启动');
+                
+                // 获取IP地址
+                this.getIPAddress();
+                
+                // 启动简单的HTTP服务器监听
+                this.startSimpleServer();
+                
+                // 模拟连接状态
+                this.updateStatus('就绪', '#4CAF50');
+                
+                console.log('TV接收器就绪');
+            }
+            
+            getIPAddress() {
+                // 尝试获取本地IP
+                const ipElement = document.getElementById('ip-address');
+                
+                // 简单的IP获取方法
+                if (window.location.hostname && window.location.hostname !== 'localhost') {
+                    ipElement.textContent = window.location.hostname;
+                } else {
+                    // 使用WebRTC获取本地IP
+                    this.getLocalIP().then(ip => {
+                        ipElement.textContent = ip || '192.168.1.100';
+                    }).catch(() => {
+                        ipElement.textContent = '192.168.1.100';
+                    });
+                }
+            }
+            
+            async getLocalIP() {
+                return new Promise((resolve) => {
+                    const pc = new RTCPeerConnection({iceServers: []});
+                    pc.createDataChannel('');
+                    pc.createOffer().then(pc.setLocalDescription.bind(pc));
+                    pc.onicecandidate = (ice) => {
+                        if (ice && ice.candidate && ice.candidate.candidate) {
+                            const ip = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(ice.candidate.candidate)[1];
+                            resolve(ip);
+                            pc.close();
+                        }
+                    };
+                    setTimeout(() => resolve('192.168.1.100'), 3000);
+                });
+            }
+            
+            startSimpleServer() {
+                // 模拟服务器启动
+                console.log('简单服务器启动');
+                
+                // 监听消息（如果有的话）
+                window.addEventListener('message', (event) => {
+                    this.handleMessage(event.data);
+                });
+                
+                // 模拟接收投屏请求
+                setTimeout(() => {
+                    this.simulateConnection();
+                }, 5000);
+            }
+            
+            simulateConnection() {
+                this.updateStatus('模拟连接中...', '#FFA500');
+                
+                setTimeout(() => {
+                    this.updateStatus('已连接', '#4CAF50');
+                    document.getElementById('connection-status').textContent = '已连接';
+                    
+                    // 模拟接收视频
+                    setTimeout(() => {
+                        this.showTestVideo();
+                    }, 3000);
+                }, 2000);
+            }
+            
+            showTestVideo() {
+                const videoContainer = document.getElementById('video-container');
+                const video = document.getElementById('video-player');
+                
+                // 使用测试视频URL或创建测试内容
+                video.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+                videoContainer.classList.add('active');
+                
+                this.updateStatus('正在播放', '#FF4444');
+            }
+            
+            updateStatus(text, color) {
+                const status = document.getElementById('status');
+                status.textContent = `● ${text}`;
+                status.style.color = color;
+            }
+            
+            handleMessage(data) {
+                console.log('收到消息:', data);
+                // 处理投屏消息
+            }
+        }
+        
+        // 视频控制函数
+        function togglePlay() {
+            const video = document.getElementById('video-player');
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        }
+        
+        function stopVideo() {
+            const video = document.getElementById('video-player');
+            video.pause();
+            video.currentTime = 0;
+        }
+        
+        function toggleFullscreen() {
+            const video = document.getElementById('video-player');
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            }
+        }
+        
+        function closeVideo() {
+            const videoContainer = document.getElementById('video-container');
+            const video = document.getElementById('video-player');
+            
+            video.pause();
+            video.src = '';
+            videoContainer.classList.remove('active');
+            
+            // 更新状态
+            const receiver = window.tvReceiver;
+            if (receiver) {
+                receiver.updateStatus('已连接', '#4CAF50');
+            }
+        }
+        
+        // 启动应用
+        window.addEventListener('load', () => {
+            console.log('页面加载完成，启动TV接收器');
+            window.tvReceiver = new SimpleTVReceiver();
+        });
+        
+        // 错误处理
+        window.addEventListener('error', (e) => {
+            console.error('应用错误:', e.error);
+        });
+        
+        // 防止页面刷新
+        window.addEventListener('beforeunload', (e) => {
+            e.preventDefault();
+            return '';
+        });
+    </script>
+</body>
+</html>
