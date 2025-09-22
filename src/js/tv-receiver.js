@@ -36,13 +36,10 @@ class TVReceiver {
             await this.updateProgress(40, '获取设备信息...');
             await this.getDeviceIP();
             
-            await this.updateProgress(60, '启动DLNA服务...');
-            await this.initializeDLNA();
-            
-            await this.updateProgress(80, '初始化远程控制...');
+            await this.updateProgress(70, '初始化远程控制...');
             this.setupRemoteNavigation();
             
-            await this.updateProgress(95, '生成连接二维码...');
+            await this.updateProgress(85, '生成连接二维码...');
             await this.generateQRCode();
             
             await this.updateProgress(100, '启动完成!');
@@ -51,6 +48,9 @@ class TVReceiver {
             setTimeout(() => {
                 this.hideLoadingScreen();
             }, 500);
+            
+            // Start DLNA service asynchronously after UI is ready
+            this.initializeDLNAAsync();
             
             this.log('TV接收器启动完成');
         } catch (error) {
@@ -289,6 +289,63 @@ class TVReceiver {
             this.log('DLNA服务启动失败: ' + error.message);
             this.updateConnectionStatus('offline');
         }
+    }
+
+    // Asynchronous DLNA initialization that doesn't block UI
+    initializeDLNAAsync() {
+        this.updateConnectionStatus('connecting');
+        this.log('后台启动DLNA服务...');
+        
+        // Detect if running on TV environment
+        const isTVEnvironment = this.detectTVEnvironment();
+        
+        if (isTVEnvironment) {
+            this.log('检测到TV环境，使用快速启动模式');
+            // Use a longer delay for TV environment and fallback quickly
+            setTimeout(async () => {
+                try {
+                    // Set a shorter timeout for TV environment
+                    const dlnaPromise = this.initializeDLNA();
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('TV环境启动超时')), 3000);
+                    });
+                    
+                    await Promise.race([dlnaPromise, timeoutPromise]);
+                } catch (error) {
+                    console.error('TV环境DLNA启动失败:', error);
+                    this.log('TV环境DLNA启动失败，使用基本功能');
+                    this.simulateConnection();
+                }
+            }, 500);
+        } else {
+            // Use setTimeout to ensure this runs after UI is fully rendered
+            setTimeout(async () => {
+                try {
+                    await this.initializeDLNA();
+                } catch (error) {
+                    console.error('Async DLNA initialization failed:', error);
+                    this.log('DLNA服务后台启动失败，使用基本功能');
+                    this.simulateConnection();
+                }
+            }, 100);
+        }
+    }
+
+    // Detect if running on TV environment
+    detectTVEnvironment() {
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isAndroidTV = userAgent.includes('android') && 
+                           (userAgent.includes('tv') || 
+                            userAgent.includes('googletv') || 
+                            userAgent.includes('androidtv'));
+        
+        // Check for TV-specific characteristics
+        const hasLimitedMemory = navigator.deviceMemory && navigator.deviceMemory <= 2;
+        const isLargeScreen = screen.width >= 1920 || screen.height >= 1080;
+        const hasLimitedPointer = !('ontouchstart' in window) && 
+                                 navigator.maxTouchPoints === 0;
+        
+        return isAndroidTV || (hasLimitedMemory && isLargeScreen && hasLimitedPointer);
     }
 
     simulateConnection() {

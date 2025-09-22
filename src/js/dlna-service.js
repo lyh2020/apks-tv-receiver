@@ -42,24 +42,24 @@ class DLNAService {
         try {
             this.tvReceiver.log('启动DLNA服务...');
             
-            // Start network discovery service with timeout
-            const discoveryPromise = this.startNetworkDiscovery();
-            const discoveryTimeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('网络发现服务启动超时')), 5000);
-            });
+            // Start HTTP server first (lightweight)
+            await this.startHTTPServer();
             
-            await Promise.race([discoveryPromise, discoveryTimeoutPromise]);
-            
-            // Start HTTP server for device description and control with timeout
-            const serverPromise = this.startHTTPServer();
-            const serverTimeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('HTTP服务器启动超时')), 3000);
-            });
-            
-            await Promise.race([serverPromise, serverTimeoutPromise]);
-            
-            // Start SSDP server for device discovery
+            // Start SSDP server
             await this.startSSDPServer();
+            
+            // Start network discovery service with shorter timeout for TV environment
+            try {
+                const discoveryPromise = this.startNetworkDiscovery();
+                const discoveryTimeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('网络发现服务启动超时')), 2000);
+                });
+                
+                await Promise.race([discoveryPromise, discoveryTimeoutPromise]);
+            } catch (error) {
+                this.tvReceiver.log('网络发现服务启动失败，继续使用基本功能: ' + error.message);
+                // Continue without network discovery
+            }
             
             this.isRunning = true;
             this.tvReceiver.log('DLNA服务启动成功');

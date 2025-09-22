@@ -38,38 +38,38 @@ class NetworkDiscoveryService {
         try {
             this.tvReceiver.log('启动网络发现服务...');
             
-            // Start device announcement with timeout
-            const announcementPromise = new Promise((resolve) => {
-                this.startAnnouncement();
-                resolve();
-            });
-            const announcementTimeout = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('设备公告启动超时')), 2000);
-            });
+            // Setup message listeners first (lightweight)
+            this.setupMessageListeners();
             
+            // Start device announcement with shorter timeout for TV environment
             try {
+                const announcementPromise = new Promise((resolve) => {
+                    this.startAnnouncement();
+                    resolve();
+                });
+                const announcementTimeout = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('设备公告启动超时')), 1000);
+                });
+                
                 await Promise.race([announcementPromise, announcementTimeout]);
             } catch (error) {
                 this.tvReceiver.log('设备公告启动失败，继续启动: ' + error.message);
             }
             
-            // Start peer discovery with timeout
-            const discoveryPromise = new Promise((resolve) => {
-                this.startDiscovery();
-                resolve();
-            });
-            const discoveryTimeout = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('设备发现启动超时')), 2000);
-            });
-            
+            // Start peer discovery with shorter timeout
             try {
+                const discoveryPromise = new Promise((resolve) => {
+                    this.startDiscovery();
+                    resolve();
+                });
+                const discoveryTimeout = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('设备发现启动超时')), 1000);
+                });
+                
                 await Promise.race([discoveryPromise, discoveryTimeout]);
             } catch (error) {
                 this.tvReceiver.log('设备发现启动失败，继续启动: ' + error.message);
             }
-            
-            // Setup message listeners
-            this.setupMessageListeners();
             
             this.isRunning = true;
             this.tvReceiver.log('网络发现服务启动成功（可能功能受限）');
