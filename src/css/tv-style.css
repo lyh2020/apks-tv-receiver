@@ -26,14 +26,22 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.5s ease;
+  opacity: 1;
+  visibility: visible;
+  transition: all 0.3s ease;
 }
 
 .loading-screen.active {
   opacity: 1;
   visibility: visible;
+  display: flex;
+}
+
+/* Force hide loading screen */
+.loading-screen:not(.active) {
+  opacity: 0;
+  visibility: hidden;
+  display: none !important;
 }
 
 .loading-content {
@@ -98,10 +106,17 @@ body {
 }
 
 .tv-container {
-  display: flex;
+  display: none;
   flex-direction: column;
   height: 100vh;
   padding: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tv-container.visible {
+  display: flex;
+  opacity: 1;
 }
 
 /* Header Styles */

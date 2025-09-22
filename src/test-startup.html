@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <title>TV启动测试</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .loading-test {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .status {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+        .log {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 5px;
+            text-align: left;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>📺 TV端启动测试</h1>
+        
+        <div class="loading-test">
+            <h2>启动流程测试</h2>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div id="status" class="status">准备开始测试...</div>
+            <div id="progress-text">0%</div>
+        </div>
+        
+        <div class="log" id="log">
+            <div>测试日志:</div>
+        </div>
+        
+        <button onclick="startTest()" style="padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">开始测试</button>
+    </div>
+
+    <script>
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logElement.innerHTML += `<div>[${time}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateProgress(percentage, status) {
+            const progressFill = document.getElementById('progress-fill');
+            const statusElement = document.getElementById('status');
+            const progressText = document.getElementById('progress-text');
+            
+            progressFill.style.width = percentage + '%';
+            statusElement.textContent = status;
+            progressText.textContent = percentage + '%';
+            
+            log(`进度: ${percentage}% - ${status}`);
+        }
+        
+        function detectTVEnvironment() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isTVUserAgent = /smart-tv|smarttv|googletv|appletv|hbbtv|pov_tv|netcast/i.test(userAgent);
+            
+            const deviceMemory = navigator.deviceMemory || 4;
+            const isLowMemory = deviceMemory <= 2;
+            
+            const screenWidth = window.screen.width;
+            const screenHeight = window.screen.height;
+            const isLargeScreen = screenWidth >= 1920 || screenHeight >= 1080;
+            
+            const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+            
+            const tvScore = (
+                (isTVUserAgent ? 3 : 0) +
+                (isLowMemory ? 1 : 0) +
+                (isLargeScreen ? 2 : 0) +
+                (hasCoarsePointer ? 1 : 0)
+            );
+            
+            log(`TV环境检测: UserAgent=${isTVUserAgent}, 内存=${deviceMemory}GB, 屏幕=${screenWidth}x${screenHeight}, 指针=${hasCoarsePointer ? '粗糙' : '精确'}, 评分=${tvScore}`);
+            
+            return tvScore >= 3;
+        }
+        
+        async function startTest() {
+            log('开始启动测试...');
+            
+            try {
+                updateProgress(10, '初始化界面...');
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                updateProgress(30, '设置事件监听器...');
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                updateProgress(50, '获取设备信息...');
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                const isTVEnvironment = detectTVEnvironment();
+                
+                if (isTVEnvironment) {
+                    updateProgress(70, 'TV环境优化启动...');
+                    log('检测到TV环境，使用快速启动模式');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    updateProgress(85, '准备TV界面...');
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                } else {
+                    updateProgress(70, '启动远程控制...');
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    updateProgress(85, '生成连接二维码...');
+                    await new Promise(resolve => setTimeout(resolve, 600));
+                }
+                
+                updateProgress(100, '启动完成');
+                document.getElementById('status').className = 'status success';
+                log('✅ 启动测试成功完成!');
+                
+            } catch (error) {
+                log('❌ 启动测试失败: ' + error.message);
+                document.getElementById('status').className = 'status error';
+                document.getElementById('status').textContent = '启动失败: ' + error.message;
+            }
+        }
+        
+        // 自动开始测试
+        window.addEventListener('load', () => {
+            log('页面加载完成');
+            setTimeout(startTest, 1000);
+        });
+    </script>
+</body>
+</html>
