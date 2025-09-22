@@ -22,6 +22,29 @@ allprojects {
         mavenCentral()
     }
     
+    // Global dependency resolution strategy to fix Kotlin conflicts
+    configurations.all {
+        resolutionStrategy {
+            // Force consistent Kotlin stdlib versions
+            force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+            force 'org.jetbrains.kotlin:kotlin-stdlib-common:1.8.22'
+            
+            // Replace old versions with new ones
+            eachDependency { details ->
+                if (details.requested.group == 'org.jetbrains.kotlin') {
+                    if (details.requested.name.startsWith('kotlin-stdlib')) {
+                        if (details.requested.version == '1.6.21' || details.requested.version.startsWith('1.6.')) {
+                            details.useVersion '1.8.22'
+                            details.because 'Fix Kotlin stdlib version conflicts'
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     // Force Java 17 for all subprojects
     afterEvaluate { project ->
         if (project.hasProperty('android')) {

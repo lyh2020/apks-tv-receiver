@@ -47,19 +47,30 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
       
-    - name: Build Android APK
+    - name: Clean and Build Android APK
       run: |
         cd android
-        ./gradlew assembleDebug
+        ./gradlew clean
+        ./gradlew assembleDebug --stacktrace
         
     - name: Build Android TV APK (Release)
       run: |
         cd android
-        ./gradlew assembleRelease
+        ./gradlew assembleRelease --stacktrace
       env:
         ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        
+    - name: List APK files (Debug)
+      run: |
+        echo "Debug APK files:"
+        find android/app/build/outputs/apk/debug -name "*.apk" -type f || echo "No debug APK found"
+        
+    - name: List APK files (Release)
+      run: |
+        echo "Release APK files:"
+        find android/app/build/outputs/apk/release -name "*.apk" -type f || echo "No release APK found"
         
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
